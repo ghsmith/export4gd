@@ -28,6 +28,11 @@ public class CoPathCase {
         public String procName;
         public String interp;
         public String comment;
+        public String clinHist;
+        public String procPathLastName;
+        public String procPathFirstName;
+        public String soPathLastName;
+        public String soPathFirstName;
 
         public CoPathProcedure() {
         }
@@ -46,6 +51,16 @@ public class CoPathCase {
                 .replace("\u00b7", " ") // thar are ASCII B7 (dot) characaters in this column
                 .replace("\r", "")
                 .replaceAll("\\s+$", "");
+            this.clinHist = rs.getString("procclinhist_text") == null ? null : rs.getString("procclinhist_text")
+                .replace("\u0008", "") // there are ASCII 08 (backspace?) characters in this column
+                .replace("\u00a0", " ") // thar are ASCII A0 (non-breaking space) characaters in this column
+                .replace("\u00b7", " ") // thar are ASCII B7 (dot) characaters in this column
+                .replace("\r", "")
+                .replaceAll("\\s+$", "");
+            this.procPathLastName = rs.getString("procpath_lastname");
+            this.procPathFirstName = rs.getString("procpath_firstname");
+            this.soPathLastName = rs.getString("sopath_lastname");
+            this.soPathFirstName = rs.getString("sopath_firstname");
         }
         
     }

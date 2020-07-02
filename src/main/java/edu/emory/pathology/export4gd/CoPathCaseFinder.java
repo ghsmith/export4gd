@@ -40,10 +40,27 @@ public class CoPathCaseFinder {
             "select                                                                                                                                                                    "
           + "  c_d_sprotype.name proc_name,                                                                                                                                            "
           + "  (select text_data from c_spec_text where specimen_id = p_special_proc.specimen_id and link_inst = p_special_proc.sp_inst and texttype_id = '$procint') as procint_text, "
-          + "  (select text_data from c_spec_text where specimen_id = p_special_proc.specimen_id and link_inst = p_special_proc.sp_inst and texttype_id = '$procres') as procres_text  "
+          + "  (select text_data from c_spec_text where specimen_id = p_special_proc.specimen_id and link_inst = p_special_proc.sp_inst and texttype_id = '$procres') as procres_text, "
+          + "  (select text_data from c_spec_text where specimen_id = p_special_proc.specimen_id and link_inst = p_special_proc.sp_inst and texttype_id = 'emy4') as procclinhist_text, "
+
+          + "  cdp.lastname sopath_lastname,  "
+          + "  cdp.firstname sopath_firstname,  "
+          + "  cdp_path.lastname procpath_lastname,  "
+          + "  cdp_path.firstname procpath_firstname "
+                    
           + "from                                                                                                                                                                      "
           + "  p_special_proc                                                                                                                                                          "
           + "  join c_d_sprotype on (c_d_sprotype.id = p_special_proc.sprotype_id)                                                                                                     "
+                    
+          + "  join c_spec_event cse on(cse.specimen_id = p_special_proc.specimen_id and cse.spproc_inst = p_special_proc.sp_inst and cse.event_id = '$sprocso')  "
+          + "  join c_d_person cdp on(cdp.id = cse.eventwho_id)  "
+
+          + "  left outer join  "
+          + "  (  "
+          + "    p_path_spproc pps  "
+          + "    join c_d_person cdp_path on(cdp_path.id = pps.person_id)  "
+          + "  ) on(pps.specimen_id = p_special_proc.specimen_id and pps.sp_inst = p_special_proc.sp_inst and pps.primary_flag = 'P')  "
+                    
           + "where                                                                                                                                                                     "
           + "  p_special_proc.specimen_id = ?                                                                                                                                          "
           + "order by                                                                                                                                                                  "

@@ -40,6 +40,7 @@ public class FcsParserCsf {
         public String fcsSampleId;
         public String[][] parameterNames = new String[20][2];
         // exposed
+        public String fcsFileName;
         public String cpCaseEmpi;
         public String cpCaseCollDate;
         public String fcsDate;
@@ -52,17 +53,18 @@ public class FcsParserCsf {
         public String cpFlowProcPathSignOut;
         public String toString() {
             StringBuffer sb = new StringBuffer();
-            sb.append(cpCaseEmpi + ",");
-            sb.append(cpCaseCollDate + ",");
-            sb.append(fcsDate + ",");
-            sb.append(cpCaseAccNo + ",");
-            sb.append("\"" + cpFlowProcClinHist + "\",");
-            sb.append("\"" + cpFlowProcInterp + "\",");
-            sb.append(precluded + ",");
-            sb.append(fcsTubeName + ",");
-            sb.append(cpFlowProcPathBilling + ",");
-            sb.append(cpFlowProcPathSignOut + ",");
-            return sb.toString().substring(0, sb.toString().length() - 1);
+            sb.append((fcsFileName != null ? fcsFileName : "") + ",");
+            sb.append((cpCaseEmpi != null ? cpCaseEmpi : "") + ",");
+            sb.append((cpCaseCollDate != null ? cpCaseCollDate : "") + ",");
+            sb.append((fcsDate != null ? fcsDate : "") + ",");
+            sb.append((cpCaseAccNo != null ? cpCaseAccNo : "") + ",");
+            sb.append((cpFlowProcClinHist != null ? "\"" + cpFlowProcClinHist + "\"" : "") + ",");
+            sb.append((cpFlowProcInterp != null ? "\"" + cpFlowProcInterp + "\"" : "") + ",");
+            sb.append((precluded != null ? precluded : "") + ",");
+            sb.append((fcsTubeName != null ? fcsTubeName : "") + ",");
+            sb.append((cpFlowProcPathBilling != null ? cpFlowProcPathBilling : "") + ",");
+            sb.append((cpFlowProcPathSignOut != null ? cpFlowProcPathSignOut : "") + ",");
+            return sb.toString();
         }
     }
     
@@ -75,10 +77,18 @@ public class FcsParserCsf {
         
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         Connection connCoPath = DriverManager.getConnection(priv.getProperty("connCoPath.url"));
-        
+
         CoPathCaseFinder cpcf = new CoPathCaseFinder(connCoPath);
+
+        Class.forName("oracle.jdbc.driver.OracleDriver");
+        Connection connCdw = DriverManager.getConnection(priv.getProperty("connCdw.url"), priv.getProperty("connCdw.u"), priv.getProperty("connCdw.p"));
+        connCdw.setAutoCommit(false);
+        connCdw.createStatement().execute("set role hnam_sel_all");
+        
+        PathNetResultFinder pnrf = new PathNetResultFinder(connCdw);
         
         Record recordHeader = new Record();
+        recordHeader.fcsFileName = "fcsFileName";
         recordHeader.cpCaseEmpi = "cpCaseEmpi";
         recordHeader.cpCaseCollDate = "cpCaseCollDate";
         recordHeader.fcsDate = "fcsDate";
@@ -88,8 +98,12 @@ public class FcsParserCsf {
         recordHeader.precluded = "precluded";
         recordHeader.fcsTubeName = "fcsTubeName";
         recordHeader.cpFlowProcPathBilling = "cpFlowProcPathBilling";
-        recordHeader.cpFlowProcPathBilling = "cpFlowProcPathBilling";
-        System.out.println(recordHeader);
+        recordHeader.cpFlowProcPathSignOut = "cpFlowProcPathSignOut";
+        System.out.print(recordHeader);
+        for(PathNetResult pnr : pnrf.getPathNetResultsByEmpiProximateToCollectionDate("11239994", new java.sql.Date(sdfOut.parse("06/30/2020").getTime()))) {
+            System.out.print("," + pnr.resultName);
+        }
+        System.out.println();
         
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));        
         String fcsFileName;
@@ -102,6 +116,7 @@ public class FcsParserCsf {
             Matcher matcherFcsFileName2 = patternFcsFileName2.matcher(fcsFileName);
             Matcher matcherFcsFileName3 = patternFcsFileName3.matcher(fcsFileName);
             Record record = new Record();
+            record.fcsFileName = fcsFileName;
             if(matcherFcsFileName1.find()) {
                 record.fcsFileDirectory = matcherFcsFileName1.group(1);
                 record.fcsFileCaseName = matcherFcsFileName1.group(2);
@@ -162,7 +177,15 @@ public class FcsParserCsf {
                 }
             }
             
-            System.out.println(record);    
+            record.precluded = "";
+            
+            System.out.print(record);    
+            if(record.cpCaseEmpi != null){
+                for(PathNetResult pnr : pnrf.getPathNetResultsByEmpiProximateToCollectionDate(record.cpCaseEmpi, new java.sql.Date(sdfOut.parse(record.cpCaseCollDate).getTime()))) {
+                    System.out.print("," + (pnr.value != null ? pnr.value : ""));
+                }
+            }
+            System.out.println();
 
         }
 
